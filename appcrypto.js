@@ -41,7 +41,7 @@ class Crypto {
     encrypted += cipher.final('hex');
     var tag = cipher.getAuthTag();
     return {
-      content: encrypted,
+      text: encrypted,
       iv: iv.toString('hex'),
       tag: tag.toString('hex')
     };
@@ -52,11 +52,11 @@ class Crypto {
     var iv = new Buffer(encrypted.iv, 'hex')
     var decipher = crypto.createDecipheriv(algo, key, iv)
     decipher.setAuthTag(new Buffer(encrypted.tag, 'hex'));
-    var dec = decipher.update(encrypted.content, 'hex', 'utf8')
+    var dec = decipher.update(encrypted.text, 'hex', 'utf8')
     try {
       dec += decipher.final('utf8');
       return {
-        content: dec
+        text: dec
       }
     } catch (e) {
       return {error: true}

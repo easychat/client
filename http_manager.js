@@ -12,9 +12,14 @@ class HttpManager {
 
   setServer(server) {
     var parsedUrl = url.parse(server);
+    this.server = parsedUrl;
     this.secure = parsedUrl.protocol === "https";
     defaults.host = parsedUrl.hostname;
     defaults.port = parsedUrl.port;
+  }
+
+  get getServer() {
+    return this.server;
   }
 
   request(verb, path, params, success, failure) {

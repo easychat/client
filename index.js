@@ -8,7 +8,7 @@ const AppCrypto = require("./appcrypto.js");
 var HttpManager = require('./http_manager');
 var activeConnection = null;
 
-HttpManager.setServer(process.env.EASY ? process.env.EASY : "https://easy.gd/api");
+HttpManager.setServer(process.env.EASY_SERVER ? process.env.EASY_SERVER : "https://easy.gd/api");
 
 var args = process.argv.slice(2);
 var customEmail = null;
@@ -109,13 +109,25 @@ function loadApplication(authenticated) {
   }
 }
 
-var roomKey;
+var sourceRoomKey, roomKey;
 
 function promptForChatAddress() {
   promptManager.promptUser([
     {property: "guest", display: "Chat with"},
   ], true, function(result){
     var guest = result.guest;
+
+    if(!guest || guest.length === 0) {
+      console.log(chalk.red("Enter the email address of the person you want to chat with."))
+      promptForChatAddress();
+      return;
+    }
+
+    if(guest === userManager.user.email) {
+      console.log(chalk.red("Type someone else's email address."))
+      promptForChatAddress();
+      return;
+    }
 
     activeConnection = new Connection(userManager.user.email, guest, userManager.user.token);
 
@@ -125,25 +137,25 @@ function promptForChatAddress() {
       })
     }
 
-    activeConnection.onMessage = function(payload) {
-      var message = payload.message;
+    activeConnection.onMessage = function(content) {
+      var textParams = content.text_params;
 
       if(roomKey) {
-        var tempMessage = payload.sender + ": " + message.content;
+        var tempMessage = content.sender + ": " + textParams.text;
         console.log(chalk.cyan(tempMessage));
 
-        message = AppCrypto.decrypt(message, roomKey);
+        textParams = AppCrypto.decrypt(textParams, roomKey);
 
         setTimeout(function () {
           promptManager.deleteLastMessage(tempMessage);
-          if(message.error) {
-            console.log(chalk.red("Unable to decrypt message. Type ':secret' to change secret."));
+          if(textParams.error) {
+            console.log(chalk.red("Unable to decrypt message. Type ':set_secret' to change secret."));
           } else {
-            console.log(chalk.cyan(payload.sender + ":", message.content));
+            console.log(chalk.cyan(content.sender + ":", textParams.text));
           }
         }, 200);
       } else {
-        console.log(chalk.cyan(payload.sender + "::", message.content));
+        console.log(chalk.cyan(content.sender + "::", textParams.text));
       }
     }
 
@@ -154,11 +166,19 @@ function promptForChatAddress() {
 }
 
 let commands = [
-  {name: ":secret", handler: function(){
+  {name: ":set_secret", handler: function(){
     promptForRoomKey(function(){
       beginMessagePrompt();
     })
-  }}
+  }},
+  {name: ":show_secret", handler: function(){
+    console.log(sourceRoomKey);
+    beginMessagePrompt();
+  }},
+  {name: ":server", handler: function(){
+    console.log(HttpManager.getServer.href);
+    beginMessagePrompt();
+  }},
 ]
 
 function isMessageCommand(message) {
@@ -183,6 +203,7 @@ function promptForRoomKey(callback) {
     var key = result.key;
     if(key && key.length > 0) {
       roomKey = AppCrypto.sha256(key);
+      sourceRoomKey = key;
     }
     callback();
   });
@@ -197,15 +218,16 @@ function beginMessagePrompt() {
       return;
     }
 
+    var textParams;
     if(roomKey) {
-      payload = AppCrypto.encrypt(message, roomKey);
+      textParams = AppCrypto.encrypt(message, roomKey);
     } else {
-      payload = {content: message}
+      textParams = {text: message}
     }
 
-    activeConnection.send(payload);
+    activeConnection.sendMessage({text_params: textParams});
 
-    var tempMessage = userManager.user.email + ": " + payload.content;
+    var tempMessage = userManager.user.email + ": " + textParams.text;
     console.log(chalk.magenta(tempMessage));
     setTimeout(function () {
       promptManager.deleteLastMessage(tempMessage);
