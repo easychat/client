@@ -34,6 +34,13 @@ class PromptManager {
         fu("error", arguments);
     };
 
+    rl.on("line", function(line) {
+      var output = this.messagePrompt + line;
+      this.deleteLastMessage(output);
+      this.onNewLine(line);
+      rl.prompt(true);
+    }.bind(this));
+
   }
 
   promptUser(prompts, keepPromptDisplayed, callback) {
@@ -73,15 +80,6 @@ class PromptManager {
   beginMessagePrompt() {
     rl.setPrompt(this.messagePrompt, this.messagePrompt.length);
     rl.prompt(true);
-
-    rl.on("line", function(line) {
-      var output = this.messagePrompt + line;
-      this.deleteLastMessage(output);
-      
-      this.onNewLine(line);
-
-      rl.prompt(true);
-    }.bind(this));
   }
 
   deleteLastMessage(message) {
@@ -92,7 +90,6 @@ class PromptManager {
 
 }
 
-module.exports = PromptManager
 
 // terminal functions
 
@@ -113,3 +110,5 @@ function moveCursorUp(lines) {
     console.log("\033[2A")
   }
 }
+
+module.exports = new PromptManager()

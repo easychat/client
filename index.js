@@ -1,11 +1,14 @@
 #!/usr/bin/env node --harmony
 
 var chalk = require('chalk');
-const userManager = new (require("./user_manager.js"))();
-const promptManager = new (require("./prompt_manager.js"))();
+const userManager = require("./user_manager.js");
+const promptManager = require("./prompt_manager.js");
 const Connection = require("./connection.js");
-const AppCrypto = new (require("./appcrypto.js"))();
+const AppCrypto = require("./appcrypto.js");
+var HttpManager = require('./http_manager');
 var activeConnection = null;
+
+HttpManager.setServer(process.env.EASY ? process.env.EASY : "https://easy.gd/api");
 
 var args = process.argv.slice(2);
 var customEmail = null;
@@ -13,8 +16,10 @@ for(var arg of args) {
   arg = arg.split("=");
   var key = arg[0];
   var value = arg[1];
-  if(key === "email") {
+  if(key === "e" || key === "email") {
     customEmail = value;
+  } else if(key === "s" || key === "server") {
+    HttpManager.setServer(value);
   }
 }
 
@@ -31,7 +36,7 @@ function loadApplication(authenticated) {
 
   var onReady = function() {
     console.log(chalk.cyan("Signed in as", userManager.user.email));
-    beginMessaging();
+    promptForChatAddress();
   }
 
   if(!authenticated) {
@@ -106,13 +111,13 @@ function loadApplication(authenticated) {
 
 var roomKey;
 
-function beginMessaging() {
+function promptForChatAddress() {
   promptManager.promptUser([
     {property: "guest", display: "Chat with"},
   ], true, function(result){
     var guest = result.guest;
 
-    activeConnection = new Connection(userManager.user.email, guest);
+    activeConnection = new Connection(userManager.user.email, guest, userManager.user.token);
 
     activeConnection.onOpen = function() {
       promptForRoomKey(function(){
@@ -123,20 +128,51 @@ function beginMessaging() {
     activeConnection.onMessage = function(payload) {
       var message = payload.message;
 
-      var tempMessage = payload.sender + ": " + message.content;
-      console.log(chalk.cyan(tempMessage));
-
       if(roomKey) {
+        var tempMessage = payload.sender + ": " + message.content;
+        console.log(chalk.cyan(tempMessage));
+
         message = AppCrypto.decrypt(message, roomKey);
+
         setTimeout(function () {
           promptManager.deleteLastMessage(tempMessage);
-          console.log(chalk.cyan(payload.sender + ":", message.content));
+          if(message.error) {
+            console.log(chalk.red("Unable to decrypt message. Type ':secret' to change secret."));
+          } else {
+            console.log(chalk.cyan(payload.sender + ":", message.content));
+          }
         }, 200);
       } else {
-        console.log(chalk.cyan(payload.sender + ":", message.content));
+        console.log(chalk.cyan(payload.sender + "::", message.content));
       }
     }
+
+    activeConnection.onClose = function() {
+      promptForChatAddress();
+    }
   });
+}
+
+let commands = [
+  {name: ":secret", handler: function(){
+    promptForRoomKey(function(){
+      beginMessagePrompt();
+    })
+  }}
+]
+
+function isMessageCommand(message) {
+  for(var cmd of commands) {
+    if(cmd.name === message) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function handleCommand(command) {
+  commands.filter(function(cmd){return cmd.name === command})[0].handler();
 }
 
 
@@ -156,24 +192,24 @@ function beginMessagePrompt() {
 
   promptManager.beginMessagePrompt();
   promptManager.onNewLine = function(message) {
+    if(isMessageCommand(message)) {
+      handleCommand(message);
+      return;
+    }
+
     if(roomKey) {
       payload = AppCrypto.encrypt(message, roomKey);
     } else {
       payload = {content: message}
     }
-    var data = {
-      command: "message",
-      data: JSON.stringify({action: "send_message", message: payload, sender: userManager.user.email}),
-      identifier: JSON.stringify({channel: "MessagesChannel", room: activeConnection.room})
-    };
 
-    activeConnection.send(data);
+    activeConnection.send(payload);
 
     var tempMessage = userManager.user.email + ": " + payload.content;
-    console.log(chalk.yellow(tempMessage));
+    console.log(chalk.magenta(tempMessage));
     setTimeout(function () {
       promptManager.deleteLastMessage(tempMessage);
-      console.log(chalk.yellow(userManager.user.email + ": " + message));
+      console.log(chalk.magenta(userManager.user.email + ": " + message));
     }, 200);
   }
 }

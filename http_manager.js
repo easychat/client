@@ -1,11 +1,21 @@
 var http = require('http');
+var https = require('https');
+const url = require('url');
 
-let defaults = {
-  host: 'localhost',
-  port: '5000',
-};
+let defaults = {};
 
 class HttpManager {
+
+  constructor() {
+    this.secure = defaults.port == 443;
+  }
+
+  setServer(server) {
+    var parsedUrl = url.parse(server);
+    this.secure = parsedUrl.protocol === "https";
+    defaults.host = parsedUrl.hostname;
+    defaults.port = parsedUrl.port;
+  }
 
   request(verb, path, params, success, failure) {
 
@@ -43,7 +53,8 @@ class HttpManager {
       });
     }
 
-    var req = http.request(options, handler);
+    var library = this.secure ? https : http;
+    var req = library.request(options, handler);
     req.on("error", function(error){
       console.log("request error", error);
       failure(error);
@@ -75,4 +86,4 @@ class HttpManager {
 }
 
 
-module.exports = HttpManager
+module.exports = new HttpManager()

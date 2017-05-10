@@ -53,12 +53,16 @@ class Crypto {
     var decipher = crypto.createDecipheriv(algo, key, iv)
     decipher.setAuthTag(new Buffer(encrypted.tag, 'hex'));
     var dec = decipher.update(encrypted.content, 'hex', 'utf8')
-    dec += decipher.final('utf8');
-    return {
-      content: dec
+    try {
+      dec += decipher.final('utf8');
+      return {
+        content: dec
+      }
+    } catch (e) {
+      return {error: true}
     }
   }
 
 }
 
-module.exports = Crypto
+module.exports = new Crypto()

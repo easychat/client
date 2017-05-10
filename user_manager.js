@@ -1,6 +1,6 @@
 var dirty = require('dirty');
-var HttpManager = new (require('./http_manager'))();
-const AppCrypto = new (require("./appcrypto.js"))();
+var HttpManager = require('./http_manager');
+const AppCrypto = require("./appcrypto.js");
 var user = {};
 
 class UserManager {
@@ -62,4 +62,4 @@ class UserManager {
 
 }
 
-module.exports = UserManager
+module.exports = new UserManager()
