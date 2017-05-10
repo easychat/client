@@ -140,7 +140,7 @@ function promptForChatAddress() {
     activeConnection.onMessage = function(content) {
       var textParams = content.text_params;
 
-      if(roomKey) {
+      if(roomKey && textParams.iv) {
         var tempMessage = content.sender + ": " + textParams.text;
         console.log(chalk.cyan(tempMessage));
 
@@ -149,7 +149,7 @@ function promptForChatAddress() {
         setTimeout(function () {
           promptManager.deleteLastMessage(tempMessage);
           if(textParams.error) {
-            console.log(chalk.red("Unable to decrypt message. Type ':set_secret' to change secret."));
+            console.log(chalk.red("Unable to decrypt message. Type ':set-secret' to change secret."));
           } else {
             console.log(chalk.cyan(content.sender + ":", textParams.text));
           }
@@ -166,12 +166,12 @@ function promptForChatAddress() {
 }
 
 let commands = [
-  {name: ":set_secret", handler: function(){
+  {name: ":set-secret", handler: function(){
     promptForRoomKey(function(){
       beginMessagePrompt();
     })
   }},
-  {name: ":show_secret", handler: function(){
+  {name: ":show-secret", handler: function(){
     console.log(sourceRoomKey);
     beginMessagePrompt();
   }},
