@@ -37,6 +37,7 @@ class Connection {
       // console.log("Received data", data);
       if(data.type === "confirm_subscription") {
         console.log(chalk.cyan("🔒  Connected with", remoteEmail));
+        this.onJoinNewChannel();
         return;
       }
 
@@ -49,10 +50,12 @@ class Connection {
         if(content.type == "new-member") {
           console.log(chalk.yellow(content.who + " has joined the room"));
           this.send("send_message", {meta: true, type: "im-here", who: this.localEmail});
+          this.onParticipantEnter();
         } else if(content.type == "less-member") {
           console.log(chalk.gray(content.who + " has left the room"));
         } else if(content.type === "im-here") {
-          console.log(chalk.yellow(content.who + " is here"));
+          console.log(chalk.yellow(content.who + " has joined the room"));
+          this.onParticipantEnter();
         }
       } else if(content.text_params) {
         this.onMessage(content);
@@ -68,6 +71,9 @@ class Connection {
   }
 
   send(action, content) {
+    if(!content) {
+      content = {};
+    }
     content.sender = this.localEmail;
     var data = {
       command: "message",
@@ -81,6 +87,27 @@ class Connection {
   sendMessage(content) {
     this.send("send_message", content);
   }
+
+
+  onJoinNewChannel() {
+    this.waitingForParticipants = true;
+
+    // wait x seconds, if still no participant, send email notification
+    setTimeout(function () {
+      if(this.waitingForParticipants) {
+          this.notifyRemoteParticipantOfInvitation();
+      }
+    }.bind(this), 1000);
+  }
+
+  onParticipantEnter() {
+    this.waitingForParticipants = false;
+  }
+
+  notifyRemoteParticipantOfInvitation() {
+    this.send("notify_participant")
+  }
+
 }
 
 module.exports = Connection

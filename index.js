@@ -155,7 +155,7 @@ function promptForChatAddress() {
           }
         }, 200);
       } else {
-        console.log(chalk.cyan(content.sender + "::", textParams.text));
+        console.log(chalk.cyan(content.sender + ":", textParams.text));
       }
     }
 
