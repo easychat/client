@@ -60,6 +60,10 @@ class UserManager {
     })
   }
 
+  logout(callback) {
+    this.db.rm("user", callback);
+  }
+
 }
 
 module.exports = new UserManager()

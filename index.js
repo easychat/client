@@ -15,11 +15,18 @@ var customEmail = null;
 for(var arg of args) {
   arg = arg.split("=");
   var key = arg[0];
-  var value = arg[1];
-  if(key === "e" || key === "email") {
-    customEmail = value;
-  } else if(key === "s" || key === "server") {
-    HttpManager.setServer(value);
+  if(arg.length > 1) {
+    var value = arg[1];
+    if(key === "e" || key === "email") {
+      customEmail = value;
+    }
+  } else {
+    if(arg == "logout") {
+      userManager.logout(function(){
+        console.log(chalk.gray("successfully logged out"))
+        process.exit()
+      });
+    }
   }
 }
 
@@ -27,7 +34,7 @@ if(customEmail) {
   loadApplication(false);
 } else {
   userManager.loadSavedUser(function(user){
-    loadApplication(true);
+    loadApplication(user.email);
   })
 }
 
@@ -35,7 +42,7 @@ if(customEmail) {
 function loadApplication(authenticated) {
 
   var onReady = function() {
-    console.log(chalk.cyan("Signed in as", userManager.user.email));
+    console.log(chalk.white("signed in as", userManager.user.email));
     promptForChatAddress();
   }
 
@@ -60,7 +67,7 @@ function loadApplication(authenticated) {
 
     var onExistingUser = function(email) {
       promptManager.promptUser([
-        {property: "password", display: "Password"},
+        {property: "password", display: "password"},
       ], true, function(pwResult){
         var password = pwResult.password;
 
@@ -68,7 +75,7 @@ function loadApplication(authenticated) {
         userManager.signIn(email, password, function(user){
           if(!user) {
             // invalid signin
-            console.log("Invalid signin, try again.");
+            console.log("invalid signin, try again.");
             onExistingUser(email);
             return;
           }
@@ -79,7 +86,7 @@ function loadApplication(authenticated) {
 
     var onNewUser = function(email) {
       promptManager.promptUser([
-        {property: "password", display: "Choose password"},
+        {property: "password", display: "choose password"},
       ], true, function(pwResult){
         var password = pwResult.password;
         userManager.register(email, password, function(response){
@@ -97,7 +104,7 @@ function loadApplication(authenticated) {
     } else {
       // ask for email
       promptManager.promptUser([
-        {property: "email", display: "Email"},
+        {property: "email", display: "email"},
       ], true, function(result){
         var email = result.email;
         onEmail(email);
@@ -113,18 +120,18 @@ var sourceRoomKey, roomKey;
 
 function promptForChatAddress() {
   promptManager.promptUser([
-    {property: "guest", display: "Chat with"},
+    {property: "guest", display: "chat with"},
   ], true, function(result){
     var guest = result.guest;
 
     if(!guest || guest.length === 0) {
-      console.log(chalk.red("Enter the email address of the person you want to chat with."))
+      console.log(chalk.red("enter the email address of the person you want to chat with."))
       promptForChatAddress();
       return;
     }
 
     if(guest === userManager.user.email) {
-      console.log(chalk.red("Type someone else's email address."))
+      console.log(chalk.red("type someone else's email address."))
       promptForChatAddress();
       return;
     }
@@ -132,9 +139,9 @@ function promptForChatAddress() {
     activeConnection = new Connection(userManager.user.email, guest, userManager.user.token);
 
     activeConnection.onOpen = function() {
-      promptForRoomKey(function(){
+      // promptForRoomKey(function(){
         beginMessagePrompt();
-      })
+      // })
     }
 
     activeConnection.onMessage = function(content) {
@@ -151,11 +158,11 @@ function promptForChatAddress() {
           if(textParams.error) {
             console.log(chalk.red("Unable to decrypt message. Type ':set-secret' to change secret."));
           } else {
-            console.log(chalk.cyan(content.sender + ":", textParams.text));
+            console.log(chalk.white(content.sender + ":", textParams.text));
           }
         }, 200);
       } else {
-        console.log(chalk.cyan(content.sender + ":", textParams.text));
+        console.log(chalk.white(content.sender + ":", textParams.text));
       }
     }
 
@@ -198,11 +205,12 @@ function handleCommand(command) {
 
 function promptForRoomKey(callback) {
   promptManager.promptUser([
-    {property: "key", display: "Enter secret sentence (optional)"},
+    {property: "key", display: "enter secret sentence (optional)"},
   ], true, function(result){
     var key = result.key;
     if(key && key.length > 0) {
       roomKey = AppCrypto.sha256(key);
+      console.log(chalk.gray("end-to-end encryption enabled"))
       sourceRoomKey = key;
     }
     callback();
@@ -231,7 +239,7 @@ function beginMessagePrompt() {
     console.log(chalk.magenta(tempMessage));
     setTimeout(function () {
       promptManager.deleteLastMessage(tempMessage);
-      console.log(chalk.magenta(userManager.user.email + ": " + message));
+      console.log(userManager.user.email + ": " + message);
     }, 200);
   }
 }

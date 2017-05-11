@@ -12,7 +12,7 @@ class Connection {
     this.localEmail = localEmail;
     this.remoteEmail = remoteEmail;
 
-    console.log(chalk.gray("Creating secure connection"));
+    console.log(chalk.gray("creating secure connection"));
     var ws = this.ws = new WebSocket(path, {
       perMessageDeflate: false
     });
@@ -36,7 +36,7 @@ class Connection {
 
       // console.log("Received data", data);
       if(data.type === "confirm_subscription") {
-        console.log(chalk.cyan("🔒  Connected with", remoteEmail));
+        console.log("secure room established");
         this.onJoinNewChannel();
         return;
       }
