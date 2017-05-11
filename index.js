@@ -151,7 +151,7 @@ function promptForChatAddress() {
 
       if(roomKey && textParams.iv) {
         var tempMessage = content.sender + ": " + textParams.text;
-        console.log(chalk.cyan(tempMessage));
+        console.log(chalk.yellow(tempMessage));
 
         textParams = AppCrypto.decrypt(textParams, roomKey);
 
@@ -160,11 +160,11 @@ function promptForChatAddress() {
           if(textParams.error) {
             console.log(chalk.red("Unable to decrypt message. Type ':set-secret' to change secret."));
           } else {
-            console.log(chalk.white(content.sender + ":", textParams.text));
+            console.log(chalk.magenta(content.sender + ":", textParams.text));
           }
         }, 200);
       } else {
-        console.log(chalk.white(content.sender + ":", textParams.text));
+        console.log(chalk.magenta(content.sender + ":", textParams.text));
       }
     }
 
@@ -207,12 +207,12 @@ function handleCommand(command) {
 
 function promptForRoomKey(callback) {
   promptManager.promptUser([
-    {property: "key", display: "enter secret sentence (optional)"},
+    {property: "key", display: "enter secret sentence to encrypt messages with (optional)"},
   ], true, function(result){
     var key = result.key;
     if(key && key.length > 0) {
       roomKey = AppCrypto.sha256(key);
-      console.log(chalk.gray("end-to-end encryption enabled"))
+      console.log(chalk.blue("end-to-end encryption enabled"))
       sourceRoomKey = key;
     }
     callback();
@@ -238,7 +238,7 @@ function beginMessagePrompt() {
     activeConnection.sendMessage({text_params: textParams});
 
     var tempMessage = userManager.user.email + ": " + textParams.text;
-    console.log(chalk.magenta(tempMessage));
+    console.log(chalk.yellow(tempMessage));
     setTimeout(function () {
       promptManager.deleteLastMessage(tempMessage);
       console.log(userManager.user.email + ": " + message);

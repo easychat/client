@@ -14,7 +14,7 @@ class Connection {
     this.localEmail = localEmail;
     this.remoteEmail = remoteEmail;
 
-    console.log(chalk.gray("creating secure connection"));
+    console.log(chalk.blue("establishing secure connection"));
     var ws = this.ws = new WebSocket(path, {
       perMessageDeflate: false
     });
@@ -32,13 +32,12 @@ class Connection {
     ws.on('message', function incoming(data, flags) {
       data = JSON.parse(data);
       if(data.type == "ping" || data.type == "welcome") {
-        // console.log("Received meta message:", data);
         return;
       }
 
       // console.log("Received data", data);
       if(data.type === "confirm_subscription") {
-        console.log("secure room established");
+        console.log(chalk.blue("secure room created"));
         this.onJoinNewChannel();
         return;
       }
@@ -48,16 +47,16 @@ class Connection {
         return;
       }
 
+      // console.log("Content", content);
+
       if(content.meta) {
         if(content.type == "new-member") {
-          console.log(chalk.yellow(content.who + " has joined the room"));
           this.send("send_message", {meta: true, type: "im-here", who: this.localEmail});
-          this.onParticipantEnter();
+          this.onParticipantEnter(content.who, content.sender_verified);
         } else if(content.type == "less-member") {
           console.log(chalk.gray(content.who + " has left the room"));
         } else if(content.type === "im-here") {
-          console.log(chalk.yellow(content.who + " has joined the room"));
-          this.onParticipantEnter();
+          this.onParticipantEnter(content.who, content.sender_verified);
         }
       } else if(content.text_params) {
         this.onMessage(content);
@@ -102,7 +101,12 @@ class Connection {
     }.bind(this), 1000);
   }
 
-  onParticipantEnter() {
+  onParticipantEnter(email, verified) {
+    if(verified) {
+      console.log(chalk.yellow(email) + chalk.cyan(" (✓)") + chalk.yellow(" has joined the room"));
+    } else {
+      console.log(chalk.yellow(email + " has joined the room"));
+    }
     this.waitingForParticipants = false;
   }
 
