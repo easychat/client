@@ -1,5 +1,7 @@
 #!/usr/bin/env node --harmony
 
+"use strict";
+
 var chalk = require('chalk');
 const userManager = require("./user_manager.js");
 const promptManager = require("./prompt_manager.js");
@@ -8,7 +10,7 @@ const AppCrypto = require("./appcrypto.js");
 var HttpManager = require('./http_manager');
 var activeConnection = null;
 
-HttpManager.setServer(process.env.EASY_SERVER ? process.env.EASY_SERVER : "https://easy.gd/api");
+HttpManager.setServer(process.env.EASY_SERVER ? process.env.EASY_SERVER : "https://api.easy.gd");
 
 var args = process.argv.slice(2);
 var customEmail = null;
@@ -139,9 +141,9 @@ function promptForChatAddress() {
     activeConnection = new Connection(userManager.user.email, guest, userManager.user.token);
 
     activeConnection.onOpen = function() {
-      // promptForRoomKey(function(){
+      promptForRoomKey(function(){
         beginMessagePrompt();
-      // })
+      })
     }
 
     activeConnection.onMessage = function(content) {

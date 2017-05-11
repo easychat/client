@@ -1,3 +1,5 @@
+"use strict";
+
 var http = require('http');
 var https = require('https');
 const url = require('url');
@@ -7,15 +9,16 @@ let defaults = {};
 class HttpManager {
 
   constructor() {
-    this.secure = defaults.port == 443;
+
   }
 
   setServer(server) {
     var parsedUrl = url.parse(server);
     this.server = parsedUrl;
-    this.secure = parsedUrl.protocol === "https";
+    this.secure = parsedUrl.protocol === "https:";
     defaults.host = parsedUrl.hostname;
     defaults.port = parsedUrl.port;
+    defaults.protocol = parsedUrl.protocol;
   }
 
   get getServer() {
@@ -49,6 +52,7 @@ class HttpManager {
       });
 
       response.on('end', function () {
+        // console.log(str);
         str = JSON.parse(str)
         if(response.statusCode < 200 || response.statusCode >= 400) {
           failure(str);

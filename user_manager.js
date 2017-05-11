@@ -1,3 +1,5 @@
+"use strict";
+
 var dirty = require('dirty');
 var HttpManager = require('./http_manager');
 const AppCrypto = require("./appcrypto.js");

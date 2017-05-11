@@ -1,3 +1,5 @@
+"use strict";
+
 const crypto = require('crypto');
 let algo = 'aes-256-gcm';
 

@@ -1,9 +1,11 @@
+"use strict";
+
 var chalk = require('chalk');
 var HttpManager = require('./http_manager');
 const WebSocket = require('ws');
 var ws;
 
-var path = process.env.EASY_SOCKET ? process.env.EASY_SOCKET : "wss://easy.gd/cable";
+var path = process.env.EASY_SOCKET ? process.env.EASY_SOCKET : "wss://api.easy.gd/cable";
 
 class Connection {
 
@@ -18,7 +20,7 @@ class Connection {
     });
 
     ws.on('error', function (err) {
-      console.log("On error:", err);
+      console.log(chalk.red("error:", err));
     });
 
     ws.on('open', function open() {

@@ -1,3 +1,5 @@
+"use strict";
+
 var chalk = require('chalk');
 const readline = require('readline');
 const util = require('util');
@@ -96,18 +98,18 @@ class PromptManager {
 function erasePreviousLine(lines) {
   for(var i = 0; i < lines; i++) {
     // Move the cursor up N lines: \033[<N>A
-    console.log("\033[2A")
+    console.log("\x1B[2A")
     // clear line
-    console.log("\033[2K")
+    console.log("\x1B[2K")
     // move cursor
-    console.log("\033[2A")
+    console.log("\x1B[2A")
   }
 }
 
 function moveCursorUp(lines) {
   for(var i = 0; i < lines; i++) {
     // Move the cursor up N lines: \033[<N>A
-    console.log("\033[2A")
+    console.log("\x1B[2A")
   }
 }
 
